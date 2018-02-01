@@ -1,0 +1,9 @@
+lang:
+  no-group: kein Rang
+  usertrackevent:
+    promotion:
+      target: Du hast von %sender% den Rang %group-to-display%&r erhalten!
+#      sender: Du hast %target% den Rang %group-to% in der Leiter %track% gegeben
+#      broadcast: %target% hat von %sender% den Rang %group-to%&r erhalten!
+    demotion:
+      target: Du hast von %sender% den Rang %group-to-display% erhalten!

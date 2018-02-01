@@ -1,0 +1,11 @@
+name: LuckPermsNotifier
+version: ${project.version}
+main: de.redstoneworld.luckpermsnotifier.LuckPermsNotifier
+depend: [LuckPerms]
+commands:
+   luckpermsnotifier:
+      aliases: [lpn]
+      description: Main plugin command
+      usage: 'Usage: /<command> [reload]'
+      permission: luckpermsnotifier.command
+      permission-message: You don't have the permission <permission>
