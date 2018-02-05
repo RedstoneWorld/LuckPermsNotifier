@@ -3,8 +3,10 @@ package de.redstoneworld.luckpermsnotifier;
 import de.themoep.bungeeplugin.BungeePlugin;
 import de.themoep.bungeeplugin.PluginCommand;
 import me.lucko.luckperms.LuckPerms;
+import me.lucko.luckperms.api.Entity;
 import me.lucko.luckperms.api.Group;
 import me.lucko.luckperms.api.event.EventHandler;
+import me.lucko.luckperms.api.event.source.EntitySource;
 import me.lucko.luckperms.api.event.user.track.UserTrackEvent;
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.CommandSender;
@@ -20,12 +22,23 @@ public final class LuckPermsNotifier extends BungeePlugin {
     @Override
     public void onEnable() {
         trackEventHandler = LuckPerms.getApi().getEventBus().subscribe(UserTrackEvent.class, e -> {
+            String sourceName = e.getSource().getType().toString();
+            CommandSender source = null;
+            if (e.getSource() instanceof EntitySource) {
+                Entity sourceEntity = ((EntitySource) e.getSource()).getEntity();
+                sourceName = sourceEntity.getName();
+                if (sourceEntity.getType() == Entity.Type.PLAYER) {
+                    source = getProxy().getPlayer(sourceEntity.getUniqueId());
+                } else if (sourceEntity.getType() == Entity.Type.CONSOLE) {
+                    source = getProxy().getConsole();
+                }
+            }
             if (hasLang("usertrackevent." + e.getAction() + ".target")) {
                 ProxiedPlayer player = getProxy().getPlayer(e.getUser().getUuid());
                 if (player != null) {
                     player.sendMessage(getLang("usertrackevent." + e.getAction() + ".target",
                             "target", e.getUser().getName(),
-                            //"sender", e.getSender().getName(),
+                            "sender", sourceName,
                             "group-to", e.getGroupTo().orElse(getLang("no-group")),
                             "group-to-display", getGroupName(e.getGroupTo().orElse("")).orElse(getLang("no-group")),
                             "group-from", e.getGroupFrom().orElse(getLang("no-group")),
@@ -33,24 +46,20 @@ public final class LuckPermsNotifier extends BungeePlugin {
                             "track", e.getTrack().getName()));
                 }
             }
-            /*if (hasLang("usertrackevent." + e.getAction() + ".sender")) {
-                ProxiedPlayer player = getProxy().getPlayer(e.getSender().getUuid());
-                if (player != null) {
-                    player.sendMessage(getLang("usertrackevent." + e.getAction() + ".sender",
-                            "target", e.getUser().getName(),
-                            "sender", e.getSender().getName(),
-                            "group-to", e.getGroupTo().orElse(getLang("no-group")),
-                            "group-to-display", getGroupName(e.getGroupTo().orElse("")).orElse(getLang("no-group")),
-                            "group-from", e.getGroupFrom().orElse(getLang("no-group")),
-                            "group-from-display", getGroupName(e.getGroupFrom().orElse("")).orElse(getLang("no-group")),
-                            "track", e.getTrack().getName()));
-                }
-                
-            }*/
+            if (source != null && hasLang("usertrackevent." + e.getAction() + ".sender")) {
+                source.sendMessage(getLang("usertrackevent." + e.getAction() + ".sender",
+                        "target", e.getUser().getName(),
+                        "sender", sourceName,
+                        "group-to", e.getGroupTo().orElse(getLang("no-group")),
+                        "group-to-display", getGroupName(e.getGroupTo().orElse("")).orElse(getLang("no-group")),
+                        "group-from", e.getGroupFrom().orElse(getLang("no-group")),
+                        "group-from-display", getGroupName(e.getGroupFrom().orElse("")).orElse(getLang("no-group")),
+                        "track", e.getTrack().getName()));
+            }
             if (hasLang("usertrackevent." + e.getAction() + ".broadcast")) {
                 String message = getLang("usertrackevent." + e.getAction() + ".broadcast",
                         "target", e.getUser().getName(),
-                        //"sender", e.getSender().getName(),
+                        "sender", sourceName,
                         "group-to", e.getGroupTo().orElse(getLang("no-group")),
                         "group-to-display", getGroupName(e.getGroupTo().orElse("")).orElse(getLang("no-group")),
                         "group-from", e.getGroupFrom().orElse(getLang("no-group")),
