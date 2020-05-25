@@ -2,12 +2,12 @@ package de.redstoneworld.luckpermsnotifier;
 
 import de.themoep.bungeeplugin.BungeePlugin;
 import de.themoep.bungeeplugin.PluginCommand;
-import me.lucko.luckperms.LuckPerms;
-import me.lucko.luckperms.api.Entity;
-import me.lucko.luckperms.api.Group;
-import me.lucko.luckperms.api.event.EventHandler;
-import me.lucko.luckperms.api.event.source.EntitySource;
-import me.lucko.luckperms.api.event.user.track.UserTrackEvent;
+import net.luckperms.api.LuckPermsProvider;
+import net.luckperms.api.event.EventSubscription;
+import net.luckperms.api.event.source.EntitySource;
+import net.luckperms.api.event.user.track.UserTrackEvent;
+import net.luckperms.api.model.group.Group;
+import net.luckperms.api.platform.PlatformEntity;
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.CommandSender;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
@@ -17,27 +17,27 @@ import java.util.Optional;
 
 public final class LuckPermsNotifier extends BungeePlugin {
     
-    private EventHandler<UserTrackEvent> trackEventHandler;
+    private EventSubscription<UserTrackEvent> trackEventHandler;
     
     @Override
     public void onEnable() {
-        trackEventHandler = LuckPerms.getApi().getEventBus().subscribe(UserTrackEvent.class, e -> {
+        trackEventHandler = LuckPermsProvider.get().getEventBus().subscribe(UserTrackEvent.class, e -> {
             String sourceName = e.getSource().getType().toString();
             CommandSender source = null;
             if (e.getSource() instanceof EntitySource) {
-                Entity sourceEntity = ((EntitySource) e.getSource()).getEntity();
+                PlatformEntity sourceEntity = ((EntitySource) e.getSource()).getEntity();
                 sourceName = sourceEntity.getName();
-                if (sourceEntity.getType() == Entity.Type.PLAYER) {
+                if (sourceEntity.getType() == PlatformEntity.Type.PLAYER) {
                     source = getProxy().getPlayer(sourceEntity.getUniqueId());
-                } else if (sourceEntity.getType() == Entity.Type.CONSOLE) {
+                } else if (sourceEntity.getType() == PlatformEntity.Type.CONSOLE) {
                     source = getProxy().getConsole();
                 }
             }
             if (hasLang("usertrackevent." + e.getAction() + ".target")) {
-                ProxiedPlayer player = getProxy().getPlayer(e.getUser().getUuid());
+                ProxiedPlayer player = getProxy().getPlayer(e.getUser().getUniqueId());
                 if (player != null) {
                     player.sendMessage(getLang("usertrackevent." + e.getAction() + ".target",
-                            "target", e.getUser().getName(),
+                            "target", e.getUser().getUsername(),
                             "sender", sourceName,
                             "group-to", e.getGroupTo().orElse(getLang("no-group")),
                             "group-to-display", getGroupName(e.getGroupTo().orElse("")).orElse(getLang("no-group")),
@@ -48,7 +48,7 @@ public final class LuckPermsNotifier extends BungeePlugin {
             }
             if (source != null && hasLang("usertrackevent." + e.getAction() + ".sender")) {
                 source.sendMessage(getLang("usertrackevent." + e.getAction() + ".sender",
-                        "target", e.getUser().getName(),
+                        "target", e.getUser().getUsername(),
                         "sender", sourceName,
                         "group-to", e.getGroupTo().orElse(getLang("no-group")),
                         "group-to-display", getGroupName(e.getGroupTo().orElse("")).orElse(getLang("no-group")),
@@ -58,7 +58,7 @@ public final class LuckPermsNotifier extends BungeePlugin {
             }
             if (hasLang("usertrackevent." + e.getAction() + ".broadcast")) {
                 String message = getLang("usertrackevent." + e.getAction() + ".broadcast",
-                        "target", e.getUser().getName(),
+                        "target", e.getUser().getUsername(),
                         "sender", sourceName,
                         "group-to", e.getGroupTo().orElse(getLang("no-group")),
                         "group-to-display", getGroupName(e.getGroupTo().orElse("")).orElse(getLang("no-group")),
@@ -102,7 +102,7 @@ public final class LuckPermsNotifier extends BungeePlugin {
     }
     
     private Optional<String> getGroupName(String groupId) {
-        Group group = LuckPerms.getApi().getGroup(groupId);
+        Group group = LuckPermsProvider.get().getGroupManager().getGroup(groupId);
         if (group != null) {
             String groupName = group.getFriendlyName();
             int bracket = groupName.indexOf('(');
@@ -116,6 +116,6 @@ public final class LuckPermsNotifier extends BungeePlugin {
     
     @Override
     public void onDisable() {
-        trackEventHandler.unregister();
+        trackEventHandler.close();
     }
 }
