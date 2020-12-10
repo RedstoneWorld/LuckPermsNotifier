@@ -2,6 +2,7 @@ name: LuckPermsNotifier
 version: ${project.version}
 main: de.redstoneworld.luckpermsnotifier.LuckPermsNotifier
 depend: [LuckPerms]
+authors: [Phoenix616]
 commands:
    luckpermsnotifier:
       aliases: [lpn]
